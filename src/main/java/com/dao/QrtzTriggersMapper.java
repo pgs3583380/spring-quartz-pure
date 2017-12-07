@@ -8,7 +8,7 @@ import java.util.List;
 
 @Repository
 public interface QrtzTriggersMapper {
-    QrtzTriggers selectByPrimaryKey(QrtzTriggers key);
+    QrtzTriggersVo selectByPrimaryKey(QrtzTriggers key);
 
     List<QrtzTriggersVo> findAll();
 }

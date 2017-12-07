@@ -25,7 +25,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     private Scheduler scheduler;
 
     @Override
-    public QrtzTriggers selectByPrimaryKey(QrtzTriggers key) {
+    public QrtzTriggersVo selectByPrimaryKey(QrtzTriggers key) {
         return triggersMapper.selectByPrimaryKey(key);
     }
 
@@ -36,7 +36,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void insert(String Descriptio, String cronExpression, String jobClassName) {
+    public void insert(String description, String cronExpression, String jobClassName) {
         try {
             Class<? extends MyJob> clazz = (Class<? extends MyJob>) Class.forName(jobClassName);
             String[] classs = jobClassName.split("\\.");
@@ -44,7 +44,7 @@ public class ScheduleServiceImpl implements ScheduleService {
             String group = Constants.DEFAULT_GROUP_NAME;
             JobDetail jobDetail = JobBuilder.newJob(clazz).withIdentity(name, group).build();
             CronScheduleBuilder cornSB = CronScheduleBuilder.cronSchedule(cronExpression);
-            CronTrigger trigger = TriggerBuilder.newTrigger().withIdentity(name, group).withSchedule(cornSB).build();
+            CronTrigger trigger = TriggerBuilder.newTrigger().withIdentity(name, group).withSchedule(cornSB).withDescription(description).build();
             scheduler.scheduleJob(jobDetail, trigger);
         } catch (Exception e) {
             logger.info("创建定时任务失败");
@@ -52,24 +52,22 @@ public class ScheduleServiceImpl implements ScheduleService {
     }
 
     @Override
-    public void update(String groupName, String jobName, String Description, String cronExpression) {
+    public void update(String jobGroup, String jobName, String description, String cronExpression) {
         try {
-            TriggerKey triggerKey = TriggerKey.triggerKey(jobName, groupName);
+            TriggerKey triggerKey = TriggerKey.triggerKey(jobName, jobGroup);
             CronScheduleBuilder scheduleBuilder = CronScheduleBuilder.cronSchedule(cronExpression);
             CronTrigger trigger = (CronTrigger) scheduler.getTrigger(triggerKey);
-            trigger = trigger.getTriggerBuilder().withIdentity(triggerKey).withSchedule(scheduleBuilder).build();
+            trigger = trigger.getTriggerBuilder().withIdentity(triggerKey).withSchedule(scheduleBuilder).withDescription(description).build();
             Trigger.TriggerState triggerState = scheduler.getTriggerState(trigger.getKey());
-            if (!triggerState.name().equalsIgnoreCase("PAUSED")) {
-                scheduler.rescheduleJob(triggerKey, trigger);
-            }
+            scheduler.rescheduleJob(triggerKey, trigger);
         } catch (SchedulerException e) {
             logger.error("更新定时任务失败", e);
         }
     }
 
     @Override
-    public void runOnce(String groupName, String jobName) {
-        JobKey jobKey = new JobKey(jobName, groupName);
+    public void runOnce(String jobGroup, String jobName) {
+        JobKey jobKey = new JobKey(jobName, jobGroup);
         try {
             scheduler.triggerJob(jobKey);
         } catch (SchedulerException e) {
@@ -78,8 +76,8 @@ public class ScheduleServiceImpl implements ScheduleService {
     }
 
     @Override
-    public void pauseJob(String groupName, String jobName) {
-        JobKey jobKey = new JobKey(jobName, groupName);
+    public void pauseJob(String jobGroup, String jobName) {
+        JobKey jobKey = new JobKey(jobName, jobGroup);
         try {
             scheduler.pauseJob(jobKey);
         } catch (SchedulerException e) {
@@ -88,8 +86,8 @@ public class ScheduleServiceImpl implements ScheduleService {
     }
 
     @Override
-    public void resumeJob(String groupName, String jobName) {
-        JobKey jobKey = new JobKey(jobName, groupName);
+    public void resumeJob(String jobGroup, String jobName) {
+        JobKey jobKey = new JobKey(jobName, jobGroup);
         try {
             scheduler.resumeJob(jobKey);
         } catch (SchedulerException e) {
@@ -98,8 +96,8 @@ public class ScheduleServiceImpl implements ScheduleService {
     }
 
     @Override
-    public void deleteJob(String groupName, String jobName) {
-        JobKey jobKey = new JobKey(jobName, groupName);
+    public void deleteJob(String jobGroup, String jobName) {
+        JobKey jobKey = new JobKey(jobName, jobGroup);
         try {
             scheduler.deleteJob(jobKey);
         } catch (SchedulerException e) {

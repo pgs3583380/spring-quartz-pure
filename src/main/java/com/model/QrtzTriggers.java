@@ -35,6 +35,14 @@ public class QrtzTriggers implements Serializable {
 
     private String triggerGroup;
 
+    public QrtzTriggers() {
+    }
+
+    public QrtzTriggers(String jobName, String jobGroup) {
+        this.jobName = jobName;
+        this.jobGroup = jobGroup;
+    }
+
     public String getSchedName() {
         return schedName;
     }

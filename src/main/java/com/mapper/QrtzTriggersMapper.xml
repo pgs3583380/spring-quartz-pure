@@ -41,10 +41,10 @@
         AND a.JOB_NAME = b.JOB_NAME
         AND a.TRIGGER_NAME = c.TRIGGER_NAME
         AND a.TRIGGER_GROUP = c.TRIGGER_GROUP
-        AND JOB_GROUP = #{jobName,jdbcType=VARCHAR}
-        AND JOB_GROUP = #{jobGroup,jdbcType=VARCHAR}
+        AND a.JOB_NAME = #{jobName,jdbcType=VARCHAR}
+        AND a.JOB_GROUP = #{jobGroup,jdbcType=VARCHAR}
     </select>
-    <select id="selectAll" resultMap="BaseResultMapVo">
+    <select id="findAll" resultMap="BaseResultMapVo">
         SELECT
           a.JOB_NAME,
           a.JOB_GROUP,
