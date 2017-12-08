@@ -43,7 +43,8 @@ public class ScheduleServiceImpl implements ScheduleService {
             String name = classs[classs.length - 1] + CommonUtils.timeFormat(new Date(), Constants.simplifyTimestampPattern);
             String group = Constants.DEFAULT_GROUP_NAME;
             JobDetail jobDetail = JobBuilder.newJob(clazz).withIdentity(name, group).build();
-            CronScheduleBuilder cornSB = CronScheduleBuilder.cronSchedule(cronExpression);
+            //表达式调度构建器,增加执行特性 missfire之后只执行一次
+            CronScheduleBuilder cornSB = CronScheduleBuilder.cronSchedule(cronExpression).withMisfireHandlingInstructionFireAndProceed();
             CronTrigger trigger = TriggerBuilder.newTrigger().withIdentity(name, group).withSchedule(cornSB).withDescription(description).build();
             scheduler.scheduleJob(jobDetail, trigger);
         } catch (Exception e) {
@@ -55,11 +56,14 @@ public class ScheduleServiceImpl implements ScheduleService {
     public void update(String jobGroup, String jobName, String description, String cronExpression) {
         try {
             TriggerKey triggerKey = TriggerKey.triggerKey(jobName, jobGroup);
-            CronScheduleBuilder scheduleBuilder = CronScheduleBuilder.cronSchedule(cronExpression);
+            CronScheduleBuilder scheduleBuilder = CronScheduleBuilder.cronSchedule(cronExpression).withMisfireHandlingInstructionFireAndProceed();
             CronTrigger trigger = (CronTrigger) scheduler.getTrigger(triggerKey);
             trigger = trigger.getTriggerBuilder().withIdentity(triggerKey).withSchedule(scheduleBuilder).withDescription(description).build();
             Trigger.TriggerState triggerState = scheduler.getTriggerState(trigger.getKey());
-            scheduler.rescheduleJob(triggerKey, trigger);
+            // 忽略状态为PAUSED的任务，解决集群环境中在其他机器设置定时任务为PAUSED状态后，集群环境启动另一台主机时定时任务全被唤醒的bug
+            if (!triggerState.name().equalsIgnoreCase("PAUSED")) {
+                scheduler.rescheduleJob(triggerKey, trigger);
+            }
         } catch (SchedulerException e) {
             logger.error("更新定时任务失败", e);
         }
