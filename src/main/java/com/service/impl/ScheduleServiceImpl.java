@@ -10,6 +10,7 @@ import com.vo.QrtzTriggersVo;
 import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -23,6 +24,11 @@ public class ScheduleServiceImpl implements ScheduleService {
     private QrtzTriggersMapper triggersMapper;
     @Resource
     private Scheduler scheduler;
+    @Resource
+    private SchedulerFactoryBean schedulerFactoryBean;
+
+    private boolean isChked = false;
+
 
     @Override
     public QrtzTriggersVo selectByPrimaryKey(QrtzTriggers key) {
@@ -69,10 +75,35 @@ public class ScheduleServiceImpl implements ScheduleService {
         }
     }
 
+    private void chkScheduleStarted() {
+        System.out.println(scheduler);
+        System.out.println(schedulerFactoryBean);
+        if (isChked) return;
+        if (schedulerFactoryBean != null) {
+            if (!schedulerFactoryBean.isAutoStartup()) {
+                System.out.println("Scheduler未伴随Spring容器启动，正在修复！！！");
+                try {
+                    if (!scheduler.isStarted()) scheduler.start();
+                } catch (SchedulerException e) {
+                    System.out.println("Scheduler启动发生异常！！！");
+                    e.printStackTrace();
+                }
+                System.out.println("Scheduler被成功启动，界面按钮可以操控Job了！");
+            } else {
+                System.out.println("Scheduler伴随Spring容器启动而启动！！！");
+            }
+            isChked = true;
+        } else {
+            System.out.println("SchedulerFactoryBean未被初始化！！！");
+        }
+    }
+
+
     @Override
     public void runOnce(String jobGroup, String jobName) {
         JobKey jobKey = new JobKey(jobName, jobGroup);
         try {
+            if (!isChked) chkScheduleStarted();
             scheduler.triggerJob(jobKey);
         } catch (SchedulerException e) {
             logger.info("运行一次失败");
@@ -83,6 +114,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     public void pauseJob(String jobGroup, String jobName) {
         JobKey jobKey = new JobKey(jobName, jobGroup);
         try {
+            if (!isChked) chkScheduleStarted();
             scheduler.pauseJob(jobKey);
         } catch (SchedulerException e) {
             logger.info("暂停任务失败");
@@ -93,6 +125,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     public void resumeJob(String jobGroup, String jobName) {
         JobKey jobKey = new JobKey(jobName, jobGroup);
         try {
+            if (!isChked) chkScheduleStarted();
             scheduler.resumeJob(jobKey);
         } catch (SchedulerException e) {
             logger.info("恢复任务失败");

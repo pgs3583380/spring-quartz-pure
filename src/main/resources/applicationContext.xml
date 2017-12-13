@@ -83,7 +83,7 @@
 
     <bean id="myJobFactory" class="com.util.MyJobFactory"/>
 
-    <bean id="scheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+    <bean class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
         <property name="jobFactory" ref="myJobFactory"/>
         <property name="dataSource" ref="dataSourceMysql"/>
         <property name="schedulerName" value="ClusterScheduler"/>
@@ -93,7 +93,7 @@
         <!--可选，QuartzScheduler 启动时更新己存在的Job，这样就不用每次修改targetObject后删除qrtz_job_details表对应记录了 -->
         <property name="overwriteExistingJobs" value="true"/>
         <!-- 设置自动启动 -->
-        <property name="autoStartup" value="true"/>
+        <property name="autoStartup" value="false"/>
     </bean>
     <aop:aspectj-autoproxy proxy-target-class="true"/>
 </beans>
